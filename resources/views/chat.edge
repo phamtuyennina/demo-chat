@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat với GPT-4o</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #f4f4f4;
+    }
+    .chat-container {
+      width: 400px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .messages {
+      height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .message {
+      padding: 8px;
+      border-radius: 5px;
+      max-width: 80%;
+    }
+    .user {
+      background: #007bff;
+      color: white;
+      align-self: flex-end;
+    }
+    .bot {
+      background: #f1f1f1;
+      align-self: flex-start;
+    }
+    .typing {
+      font-style: italic;
+      color: gray;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <h2>Chat với GPT-4o</h2>
+    <div class="messages" id="messages"></div>
+    <input type="text" id="userMessage" placeholder="Nhập tin nhắn..." onkeypress="handleKeyPress(event)">
+  </div>
+
+  <script>
+    const messages = [];
+    const messagesContainer = document.getElementById('messages');
+    const userInput = document.getElementById('userMessage');
+
+    async function sendMessage() {
+      const message = userInput.value.trim();
+      if (!message) return;
+
+      messages.push({ role: 'user', content: message });
+      appendMessage('user', message);
+      userInput.value = '';
+
+      const typingIndicator = document.createElement('div');
+      typingIndicator.classList.add('typing');
+      typingIndicator.innerText = 'Bot đang trả lời...';
+      messagesContainer.appendChild(typingIndicator);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      const lastTwoMessages = messages.slice(-2);
+      const response = await fetch('/send-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lastTwoMessages })
+      });
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let botMessage = { role: 'assistant', content: '' };
+      messages.push(botMessage);
+      messagesContainer.removeChild(typingIndicator);
+      const botMessageDiv = appendMessage('assistant', '');
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        botMessage.content += decoder.decode(value, { stream: true });
+        botMessageDiv.innerText = botMessage.content;
+        messagesContainer.scrollTop = messagesContainer.scrollHeight; 
+      }
+    }
+
+    function appendMessage(role, content) {
+      const messageDiv = document.createElement('div');
+      messageDiv.classList.add('message', role);
+      messageDiv.innerText = content;
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      return messageDiv;
+    }
+
+    function handleKeyPress(event) {
+      if (event.key === 'Enter') sendMessage();
+    }
+  </script>
+</body>
+</html>
