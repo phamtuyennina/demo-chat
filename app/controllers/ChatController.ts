@@ -2,7 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import OpenAI from 'openai'
 export default class ChatController {
   private openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY || '',
+    apiKey: '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',
   })
   index(context: HttpContext) {
     return context.view.render('chat')
