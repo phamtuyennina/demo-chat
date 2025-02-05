@@ -17,6 +17,7 @@ export default class ChatController {
       const chatResponse = await this.openai.chat.completions.create({
         model: 'gpt-4-turbo',
         messages: lastTwoMessages,
+        stream: true,
       })
       response.header('Content-Type', 'text/event-stream')
       response.header('Cache-Control', 'no-cache')
@@ -24,7 +25,7 @@ export default class ChatController {
       
       for await (const chunk of chatResponse) {
         const text = chunk.choices[0]?.delta?.content || ''
-        response.response.write(text)
+        response.response.write(text) // 🚀 Đúng chuẩn AdonisJS v6
       }
 
       response.response.end()
